@@ -190,7 +190,8 @@ Citizen.CreateThread(function()
                     
                     
                     
-                    TaskStartScenarioInPlace(PlayerPedId(), GetHashKey("WORLD_HUMAN_CANNED_FOOD_COOKING"), -1, true, "StartScenario", 0, false)
+                    TaskStartScenarioInPlace(medicPed, GetHashKey("WORLD_HUMAN_CROUCH_INSPECT"), 0, true)
+                    Citizen.Wait(3000)  -- Wait for the medic to perform the crouching scenario
                     
                     Citizen.Wait(Config.ReviveTime) -- Wait for Config.ReviveTime before reviving
                     
