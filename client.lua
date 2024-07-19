@@ -6,6 +6,11 @@ local medicPed = nil
 local CooldownActive = false
 local lastMedicPos = vector3(0,0,0)
 
+local function IsPlayerMedic()
+    local Player = RSGCore.Functions.GetPlayerData()
+    return Player.job.name == "medic"
+end
+
 -- Helper Functions
 local function CleanupEntities()
     if DoesEntityExist(medicHorse) then
@@ -62,10 +67,19 @@ RegisterCommand("help", function(source, args, raw)
     local playerPed = PlayerPedId()
 
     if IsEntityDead(playerPed) then
-        if not CooldownActive then
-            Notify("A medic is on the way!", 'success', 3000)
-            TriggerEvent('rsg-medic:client:spawnMedic')
-            CooldownActive = true
+        if IsPlayerMedic() then
+            Notify("As a medic, you can't call for medical assistance. Use your skills!", 'error', 3000)
+        elseif not CooldownActive then
+            -- Check if there are any online medics
+            RSGCore.Functions.TriggerCallback('rsg-medic:server:anyMedicsOnline', function(medicsOnline)
+                if medicsOnline then
+                    Notify("There are medics on duty. Please wait for their assistance or use /911 to call them.", 'info', 5000)
+                else
+                    Notify("A medic is on the way!", 'success', 3000)
+                    TriggerEvent('rsg-medic:client:spawnMedic')
+                    CooldownActive = true
+                end
+            end)
         else
             Notify("Please wait before trying again!", 'error', 3000)
         end
