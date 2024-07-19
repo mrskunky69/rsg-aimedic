@@ -25,6 +25,19 @@ RSGCore.Functions.CreateCallback('hhfw:docOnline', function(source, cb)
 end)
 
 
+RSGCore.Functions.CreateCallback('rsg-medic:server:anyMedicsOnline', function(source, cb)
+    local medics = 0
+    local players = RSGCore.Functions.GetPlayers()
+    for _, v in pairs(players) do
+        local Player = RSGCore.Functions.GetPlayer(v)
+        if Player.PlayerData.job.name == "medic" then
+            medics = medics + 1
+        end
+    end
+    cb(medics > 0)
+end)
+
+
 
 RegisterServerEvent('hhfw:charge')
 AddEventHandler('hhfw:charge', function()
