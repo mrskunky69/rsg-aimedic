@@ -37,8 +37,6 @@ RSGCore.Functions.CreateCallback('rsg-medic:server:anyMedicsOnline', function(so
     cb(medics > 0)
 end)
 
-
-
 RegisterServerEvent('hhfw:charge')
 AddEventHandler('hhfw:charge', function()
 	local src = source
