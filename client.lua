@@ -28,10 +28,6 @@ local function ResetScriptState()
     CooldownActive = false
 end
 
-local function Notify(msg, type, duration)
-    RSGCore.Functions.Notify(msg, type, duration)
-end
-
 local function FindSafeRoadSpawnPoint(playerCoords, radius)
     local attempt = 0
     local maxAttempts = 100  -- Increase this if needed for larger search area
@@ -68,25 +64,25 @@ RegisterCommand("help", function(source, args, raw)
 
     if IsEntityDead(playerPed) then
         if IsPlayerMedic() then
-            Notify("As a medic, you can't call for medical assistance. Use your skills!", 'error', 3000)
+            RSGCore.Functions.Notify("As a medic, you can't call for medical assistance. Use your skills!", 'error', 3000)
         elseif not CooldownActive then
             -- Check if there are any online medics
             RSGCore.Functions.TriggerCallback('rsg-medic:server:anyMedicsOnline', function(medicsOnline)
                 if medicsOnline then
-                    Notify("There are medics on duty. Please wait for their assistance or use /911 to call them.", 'info', 5000)
+                    RSGCore.Functions.Notify("There are medics on duty. Please wait for their assistance or use /911 to call them.", 'info', 5000)
                 else
-                    Notify("A medic is on the way!", 'success', 3000)
+                    RSGCore.Functions.Notify("A medic is on the way!", 'success', 3000)
                     TriggerEvent('rsg-medic:client:spawnMedic')
                     CooldownActive = true
                 end
             end)
         else
-            Notify("Please wait before trying again!", 'error', 3000)
+            RSGCore.Functions.Notify("Please wait before trying again!", 'error', 3000)
         end
     else
-        Notify("This can only be used when dead!", 'error', 3000)
+        RSGCore.Functions.Notify("This can only be used when dead!", 'error', 3000)
     end
-end)
+end, false)
 
 -- Medic Spawn Event
 RegisterNetEvent('rsg-medic:client:spawnMedic')
@@ -99,12 +95,12 @@ AddEventHandler('rsg-medic:client:spawnMedic', function()
     local spawnPos = FindSafeRoadSpawnPoint(playerCoords, 50.0)
 
     if not spawnPos then
-        Notify("Unable to find a suitable spawn location for the medic.", 'error', 5000)
+        RSGCore.Functions.Notify("Unable to find a suitable spawn location for the medic.", 'error', 5000)
         return
     end
 
-    local horseHash = GetHashKey("A_C_Horse_Arabian_White")
-    local pedModelHash = GetHashKey("cs_sddoctor_01")
+    local horseHash = joaat("A_C_Horse_Arabian_White")
+    local pedModelHash = joaat("cs_sddoctor_01")
 
     RequestModel(horseHash)
     RequestModel(pedModelHash)
@@ -117,7 +113,7 @@ AddEventHandler('rsg-medic:client:spawnMedic', function()
     Citizen.InvokeNative(0x283978A15512B2FE, medicHorse, true)
 
     -- Add saddle to the horse
-    local saddleHash = GetHashKey("HORSE_EQUIPMENT_MCCLELLAN_01")
+    local saddleHash = joaat("HORSE_EQUIPMENT_MCCLELLAN_01")
     Citizen.InvokeNative(0xD3A7B003ED343FD9, medicHorse, saddleHash, true, true, true)
 
     -- Set horse's attributes for faster speed
@@ -128,18 +124,17 @@ AddEventHandler('rsg-medic:client:spawnMedic', function()
     Citizen.InvokeNative(0x283978A15512B2FE, medicPed, true)
 
     Citizen.InvokeNative(0x028F76B6E78246EB, medicPed, medicHorse, -1)
-    
+
     TaskGoToCoordAnyMeans(medicPed, playerCoords.x, playerCoords.y, playerCoords.z, 4.0, 0, 0, 786603, 0xbf800000)
 
     Active = true
-    print("Medic spawned at: " .. tostring(spawnPos))
-    print("Player position: " .. tostring(playerCoords))
+
 end)
 
 -- Update Medic Destination
-Citizen.CreateThread(function()
+CreateThread(function()
     while true do
-        Citizen.Wait(3000)  -- Update more frequently (every 3 seconds)
+        Wait(3000)  -- Update more frequently (every 3 seconds)
         if Active and DoesEntityExist(medicPed) then
             local playerCoords = GetEntityCoords(PlayerPedId())
             TaskGoToCoordAnyMeans(medicPed, playerCoords.x, playerCoords.y, playerCoords.z, 4.0, 0, 0, 786603, 0xbf800000)
@@ -148,9 +143,9 @@ Citizen.CreateThread(function()
 end)
 
 -- Check for Stuck Medic
-Citizen.CreateThread(function()
+CreateThread(function()
     while true do
-        Citizen.Wait(10000)  -- Check every 10 seconds
+        Wait(10000)  -- Check every 10 seconds
         if Active and DoesEntityExist(medicPed) then
             local currentPos = GetEntityCoords(medicPed)
             if #(currentPos - lastMedicPos) < 0.1 then
@@ -166,60 +161,59 @@ end)
 
 -- Main Loop
 -- Main Loop
-Citizen.CreateThread(function()
+CreateThread(function()
     while true do
-        Citizen.Wait(200)
+        Wait(200)
         if Active then
             local playerPed = PlayerPedId()
             local playerCoords = GetEntityCoords(playerPed)
             local medicCoords = GetEntityCoords(medicPed)
             local distToMedicPed = #(playerCoords - medicCoords)
-            
+
             if distToMedicPed <= 15.0 and IsPedOnMount(medicPed) then
                 -- Medic is close, dismount from horse
                 TaskDismountAnimal(medicPed, 1, 0, 0, 0, 0)
-                Citizen.Wait(1000)  -- Reduced wait time for dismount animation
+                Wait(1000)  -- Reduced wait time for dismount animation
             end
-            
+
             if distToMedicPed <= 3.0 then  -- Increased distance for interaction
                 -- Medic reached the player
                 ClearPedTasks(medicPed)
-                
+
                 if IsEntityDead(playerPed) then
-                    Notify("The medic is treating you...", 'primary', 3000)
-                    
-                    
-                    
-                    TaskStartScenarioInPlace(medicPed, GetHashKey("WORLD_HUMAN_CROUCH_INSPECT"), 0, true)
-                    Citizen.Wait(3000)  -- Wait for the medic to perform the crouching scenario
-                    
-                    Citizen.Wait(Config.ReviveTime) -- Wait for Config.ReviveTime before reviving
-                    
+                    RSGCore.Functions.Notify("The medic is treating you...", 'primary', 3000)
+
+
+
+                    TaskStartScenarioInPlace(medicPed, joaat("WORLD_HUMAN_CROUCH_INSPECT"), 0, true)
+                    Wait(3000)  -- Wait for the medic to perform the crouching scenario
+
+                    Wait(Config.ReviveTime) -- Wait for Config.ReviveTime before reviving
+
                     TriggerEvent('rsg-medic:client:revive')
                     TriggerServerEvent('hhfw:charge')  -- Charge the player
-                    Notify("The medic has revived you and returned you to a safe zone!", 'success', 3000)
-                    
+                    RSGCore.Functions.Notify("The medic has revived you and returned you to a safe zone!", 'success', 3000)
+
                     CleanupEntities()
                     ResetScriptState()
                 else
-                    Notify("The medic has arrived but you don't need treatment.", 'primary', 3000)
+                    RSGCore.Functions.Notify("The medic has arrived but you don't need treatment.", 'primary', 3000)
                     CleanupEntities()
                     ResetScriptState()
                 end
             end
         else
-            Citizen.Wait(5000)  -- Reduced wait time when inactive
+            Wait(5000)  -- Reduced wait time when inactive
         end
     end
 end)
 
 -- Cooldown Reset
-Citizen.CreateThread(function()
+CreateThread(function()
     while true do
-        Citizen.Wait(60000)  -- Check every minute
+        Wait(60000)  -- Check every minute
         if CooldownActive then
             CooldownActive = false
         end
     end
 end)
-
